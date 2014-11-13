@@ -13,8 +13,13 @@ angular.module('fontDB', []).controller('MainCtrl', [
 			if(!$scope.name || $scope.name === '') {
 				return;
 			}
+			$scope.isTrueType = $scope.isTrueType || false;
 			$scope.fonts.push({name: $scope.name, isTrueType: $scope.isTrueType});
 			$scope.name = '';
+		};
+		
+		$scope.removeFont = function(index) {
+			$scope.fonts.splice(index, 1);
 		};
 	}
 ]);
