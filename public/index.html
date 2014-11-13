@@ -1,0 +1,17 @@
+<html>
+  <head>
+    <title>My Angular App!</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js"></script>
+    <script src="mainApp.js"></script>
+  </head>
+  <body ng-app="fontDB" ng-controller="MainCtrl">
+	<div ng-repeat="font in fonts">
+	  {{font.name}} {{font.isTrueType}}
+	</div>  
+	<form ng-submit="addFont()">
+		<input type="text" ng-model="name"></input>
+		<input type="checkbox" ng-model="isTrueType"></input>
+		<button type="submit">Add</button>
+	</form>	
+  </body>
+</html>
