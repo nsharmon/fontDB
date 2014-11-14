@@ -1,13 +1,24 @@
-angular.module('fontDB', []).controller('MainCtrl', [
+var app = angular.module('fontDB', ['ui.router']);
+
+app.config([
+	'$stateProvider',
+	'$urlRouterProvider',
+	function($stateProvider, $urlRouterProvider) {
+		$stateProvider.state('home', {
+			url: '/home',
+			templateUrl: '/home.html',
+			controller: 'MainCtrl'
+		});
+
+		$urlRouterProvider.otherwise('home');
+	}
+]);
+
+app.controller('MainCtrl', [
 	'$scope',
-	function($scope){
-		$scope.fonts = [
-			{name: 'Times New Roman', isTrueType: false},
-			{name: 'Comic Sans MS', isTrueType: false},
-			{name: 'Courier New', isTrueType: false},
-			{name: 'Sans Serif', isTrueType: false},
-			{name: 'Wingdings', isTrueType: true}
-		]; 
+	'fontsService',
+	function($scope, fontsService){
+		$scope.fonts = fontsService.fonts; 
 		
 		$scope.addFont = function() {
 			if(!$scope.name || $scope.name === '') {
@@ -23,3 +34,10 @@ angular.module('fontDB', []).controller('MainCtrl', [
 		};
 	}
 ]);
+
+app.factory('fontsService', [function(){
+	var fonts = {
+		fonts: []
+	};
+	return fonts;
+}]);
