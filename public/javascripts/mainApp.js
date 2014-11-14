@@ -68,6 +68,11 @@ app.controller('MainCtrl', [
 ]);
 
 app.factory('fontsService', [function(){
+o.getAll = function() {
+    return $http.get('/posts').success(function(data){
+      angular.copy(data, o.posts);
+    });
+  };
 	var fonts = {
 		fonts: []
 	};
