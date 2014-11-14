@@ -8,9 +8,23 @@
 	
 	<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-	<script src="mainApp.js"></script>
+	<script src="/javascripts/mainApp.js"></script>
 </head>
 <body ng-app="fontDB">
+	<nav class="navbar navbar-default" role="navigation">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<a class="navbar-brand" href="#"><img src="favicon.ico" /></a>
+			</div>
+
+			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+				<ul class="nav navbar-nav">
+				<li class="active"><a href="#">Home <span class="sr-only">(current)</span></a></li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+
 	<ui-view></ui-view>
 	
 	<script type="text/ng-template" id="/home.html">
@@ -26,43 +40,46 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr ng-repeat="font in fonts">
+						<tr ng-repeat="font in fonts" ng-click="editFont($index)" data-toggle="modal" data-target="#fontEditDialog">
 						  <td>{{font.name}}</td>
 						  <td>{{font.isTrueType}}</td>
-						  <td><span class="glyphicon glyphicon-remove-sign" ng-click="removeFont($index)"></span></td>
+						  <td>
+							<span class="glyphicon glyphicon-remove-sign" ng-click="removeFont($index, $event)"></span>
+							<span class="glyphicon glyphicon-pencil" ng-click="editFont($index, $event)"></span>
+						  </td>
 						</tr> 
 					</tbody>
 					<tfoot>
 						<tr>
-							<td colspan="3"><button type="button" class="btn" data-toggle="modal" data-target="#myModal">New</button></td>
+							<td colspan="3"><button type="button" class="btn" data-toggle="modal" data-target="#fontEditDialog" ng-click="newFont()">New</button></td>
 						</tr>
 					</tfoot>
 				</table>
 			</div>
 		</div>
 		
-		<form ng-submit="addFont()">
-			<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<form ng-submit="saveFont()">
+			<div class="modal fade" id="fontEditDialog" tabindex="-1" role="dialog" aria-labelledby="fontEditDialogLabel" aria-hidden="true">
 				<div class="modal-dialog">
 					<div class="modal-content">
 						<div class="modal-header">
 							<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-							<h4 class="modal-title" id="myModalLabel">Modal title</h4>
+							<h4 class="modal-title" id="fontEditDialogLabel">Font edit</h4>
 						</div>
 						<div class="modal-body">
 							<table class="table">
 								<tr>
-									<td colspan="2"><input type="text" ng-model="name" class="form-control" placeholder="Name"></input></td>
+									<td colspan="2"><input type="text" ng-model="selectedFont.name" class="form-control" placeholder="Name"></input></td>
 								</tr>
 								<tr>
 									<td>Is true type?</td>
-									<td><input type="checkbox" ng-model="isTrueType" class="form-control"></input></td>
+									<td><input type="checkbox" ng-model="selectedFont.isTrueType" class="form-control"></input></td>
 								</tr>
 							</table>
 						</div>
 						<div class="modal-footer">
 							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-							<button type="submit" class="btn btn-primary">Add</button>
+							<button type="submit" class="btn btn-primary">Save</button>
 						</div>
 					</div>
 				</div>
