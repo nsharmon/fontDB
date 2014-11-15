@@ -43,10 +43,19 @@ router.get('/fonts/:font', function(req, res) {
 });
 
 router.put('/fonts/:font', function(req, res, next) {
-  req.font.save(function(err, post){
+  req.font.save(function(err, font){
     if (err) { return next(err); }
 
-    res.json(post);
+    res.json(font);
+  });
+});
+
+router.delete('/fonts/:font', function(req, res, next) {
+  console.log("Hi");
+  req.font.remove(function(err, font){
+    if (err) { return next(err); }
+
+    res.json(font);
   });
 });
 

@@ -1,16 +1,65 @@
 var app = angular.module('fontDB', ['ui.router']);
 
+function copyFont(from, to) {
+	to.name = from.name;
+	to.isTrueType = from.isTrueType;
+	to.original = from;
+	to._id = from._id;
+}
+
+app.factory('fontsService', ['$http', function($http){
+	var service = {
+		fonts: []
+	};
+	service.getAll = function() {
+		return $http.get('/fonts').success(function(data){
+			angular.copy(data, service.fonts);
+		});
+	};
+	service.create = function(font) {
+		return $http.post('/fonts', font).success(function(data){
+			service.fonts.push(data);
+		});
+	};
+	service.save = function(font) {
+		return $http.put('/fonts/'+font._id, font).success(function(data){
+			copyFont(font, font.original);
+		});
+	};
+	service.remove = function(index) {
+		var font = service.fonts[index];
+		return $http.delete('/fonts/'+font._id, font).success(function(data){
+			service.fonts.splice(index, 1);
+		});
+	};
+				
+	return service;
+}]);
+
+app.config([
+	'$stateProvider',
+	'$urlRouterProvider',
+	function($stateProvider, $urlRouterProvider) {
+		$stateProvider.state('home', {
+			url: '/home',
+			templateUrl: '/home.html',
+			controller: 'MainCtrl',
+			resolve: {
+				fontPromise: ['fontsService', function(fontsService) {
+					return fontsService.getAll();
+				}]
+			}
+		});
+
+		$urlRouterProvider.otherwise('home');
+	}
+]);
+
 app.controller('MainCtrl', [
 	'$scope',
 	'fontsService',
 	function($scope, fontsService){
 		$scope.fonts = fontsService.fonts; 
-	
-		function copyFont(from, to) {
-			to.name = from.name;
-			to.isTrueType = from.isTrueType;
-			to.original = from;
-		}
 		
 		$scope.saveFont = function() {
 			if(!$scope.selectedFont || $scope.selectedFont.name === '') {
@@ -21,7 +70,7 @@ app.controller('MainCtrl', [
 			if(!$scope.selectedFont.original) {
 				fontsService.create($scope.selectedFont);
 			} else {
-				copyFont($scope.selectedFont, original);
+				fontsService.save($scope.selectedFont);
 			}
 			$scope.newFont();
 			
@@ -48,44 +97,7 @@ app.controller('MainCtrl', [
 			if(event) {
 				event.stopPropagation();
 			}
-			$scope.fonts.splice(index, 1);
+			fontsService.remove(index);
 		};
 	}
 ]);
-
-app.config([
-	'$stateProvider',
-	'$urlRouterProvider',
-	'fontsService',
-	function($stateProvider, $urlRouterProvider, fontsService) {
-		$stateProvider.state('home', {
-			url: '/home',
-			templateUrl: '/home.html',
-			controller: 'MainCtrl',
-			resolve: {
-				fontPromise: ['fonts', function(fontsService) {
-					return fontsService.getAll();
-				}]
-			}
-		});
-
-		$urlRouterProvider.otherwise('home');
-	}
-]);
-
-app.factory('fontsService', ['$http', function($http){
-	var service = {
-		fonts: []
-	};
-	service.getAll = function() {
-		return $http.get('/fonts').success(function(data){
-			angular.copy(data, service.fonts);
-		});
-	};
-	service.create = function() {
-		return $http.post('/fonts', font).success(function(data){
-			service.fonts.push(data);
-		});
-	};
-	return service;
-}]);
