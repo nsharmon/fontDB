@@ -7,7 +7,7 @@ var bodyParser = require('body-parser');
 
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://fontdbuser:fontdbpass@dharma.mongohq.com:10038/awesome');
+mongoose.connect('mongodb://' + process.env.npm_package_config_mdbUser + ":" + process.env.npm_package_config_mdbPass + '@' + process.env.npm_package_config_mdbHost + '/' + process.env.npm_package_config_mdbDatabase);
 require('./models/Font');
 
 var routes = require('./routes/index');
