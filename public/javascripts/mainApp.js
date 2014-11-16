@@ -32,7 +32,7 @@ app.factory('fontsService', ['$http', function($http){
 			service.fonts.splice(index, 1);
 		});
 	};
-				
+
 	return service;
 }]);
 
