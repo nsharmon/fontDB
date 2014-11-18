@@ -45,9 +45,6 @@ function connect(callback) {
 function setupExpress() {
 	console.log('Preparing express and server listeners...');
 	
-	var routes = require('./routes/index');
-	var users = require('./routes/users');
-	
 	var app = express();
 
 	// view engine setup
@@ -65,9 +62,10 @@ function setupExpress() {
 	app.use(require('response-time')());
 	app.use(cookieParser());
 	app.use(express.static(path.join(__dirname, 'public')));
-
-	app.use('/', routes);
-	app.use('/users', users);
+	
+	app.use('/', require(path.join(__dirname, "routes", "common.js")));
+	app.use('/fonts', require(path.join(__dirname, "routes", "fonts.js")));
+	app.use('/users', require(path.join(__dirname, "routes", "users.js")));
 
 	app.use(function(req, res, next) {
 		onFinished(res, function (err) {
@@ -81,8 +79,8 @@ function setupExpress() {
 	});
 	jwtCheck.unless = unless;
 	
-	app.use(jwtCheck.unless({path: '/api/login' }));
-	app.use(utils.middleware().unless({path: '/api/login' }));
+	app.use(jwtCheck.unless({path: ['/api/login', '/fonts'] }));
+	app.use(utils.middleware().unless({path: ['/api/login', '/fonts'] }));
 
 	app.use("/api", require(path.join(__dirname, "routes", "default.js"))());
 	

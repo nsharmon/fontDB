@@ -176,7 +176,6 @@ module.exports.middleware = function () {
         var token = exports.fetch(req.headers);
 
         exports.retrieve(token, function (err, data) {
-
             if (err) {
                 req.user = undefined;
                 return next(new UnauthorizedAccessError("invalid_token", data));

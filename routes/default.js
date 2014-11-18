@@ -29,7 +29,6 @@ var authenticate = function (req, res, next) {
         User.findOne({
             username: username
         }, function (err, user) {
-
             if (err || !user) {
                 return next(new UnauthorizedAccessError("401", {
                     message: 'Invalid username or password'
