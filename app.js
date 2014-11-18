@@ -1,18 +1,45 @@
+"use strict";
+
+var http_port = process.env.HTTP_PORT || 3000,
+    https_port = process.env.HTTPS_PORT || 3443;
+
+var debug = require('debug')('app:' + process.pid);
+var path = require("path");
+var fs = require("fs");
+var jwt = require("express-jwt");
+var onFinished = require('on-finished');
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+var NotFoundError = require(path.join(__dirname, "errors", "NotFoundError.js"));
+var utils = require(path.join(__dirname, "utils.js"));
+var unless = require('express-unless');
 
 var mongoose = require('mongoose');
+mongoose.set('debug', !!process.env.npm_config_debug);
 
-function connect() {
+function init() {
+	connect(function() {
+		debug("Mongoose connected to the database");
+		require('./models/Font');
+		
+		setupExpress();
+		
+		console.log('Server ready.');
+	});
+}
+
+function connect(callback) {
 	var connectionString = 'mongodb://' + process.env.npm_config_mdbUser + ':' + process.env.npm_config_mdbPassword + '@' + process.env.npm_config_mdbHost + '/' + process.env.npm_config_mdbDatabase;	
 	var connectionStringCensored = 'mongodb://' + process.env.npm_config_mdbUser + ':******@' + process.env.npm_config_mdbHost + '/' + process.env.npm_config_mdbDatabase;		
 	console.log('Attempting connection using: ' + connectionStringCensored);
 	mongoose.connect(connectionString);
-	require('./models/Font');
+	mongoose.connection.on('error', function () {
+		debug('Mongoose connection error');
+	});	
+	mongoose.connection.once('open', callback);
 }
 
 function setupExpress() {
@@ -30,50 +57,82 @@ function setupExpress() {
 	// uncomment after placing your favicon in /public
 	//app.use(favicon(__dirname + '/public/favicon.ico'));
 	app.use(logger('dev'));
+	
+	var bodyParser = require('body-parser');
 	app.use(bodyParser.json());
 	app.use(bodyParser.urlencoded({ extended: false }));
+	app.use(require('compression')());
+	app.use(require('response-time')());
 	app.use(cookieParser());
 	app.use(express.static(path.join(__dirname, 'public')));
 
 	app.use('/', routes);
 	app.use('/users', users);
 
-	// catch 404 and forward to error handler
 	app.use(function(req, res, next) {
-		var err = new Error('Not Found');
-		err.status = 404;
-		next(err);
+		onFinished(res, function (err) {
+			debug("[%s] finished request", req.connection.remoteAddress);
+		});
+		next();
+	});
+	
+	var jwtCheck = jwt({
+		secret: process.env.npm_config_secret
+	});
+	jwtCheck.unless = unless;
+	
+	app.use(jwtCheck.unless({path: '/api/login' }));
+	app.use(utils.middleware().unless({path: '/api/login' }));
+
+	app.use("/api", require(path.join(__dirname, "routes", "default.js"))());
+	
+	// all other requests redirect to 404
+	app.all("*", function (req, res, next) {
+		next(new NotFoundError("404"));
+	});
+	
+	// error handler for all the applications
+	app.use(function (err, req, res, next) {
+
+		var errorType = typeof err,
+			code = 500,
+			msg = { message: "Internal Server Error" };
+
+		switch (err.name) {
+			case "UnauthorizedError":
+				code = err.status;
+				msg = undefined;
+				break;
+			case "BadRequestError":
+			case "UnauthorizedAccessError":
+			case "NotFoundError":
+				code = err.status;
+				msg = err.inner;
+				break;
+			default:
+				break;
+		}
+
+		return res.status(code).json(msg);
+	});
+	
+	debug("Creating HTTP server on port: %s", http_port);
+	require('http').createServer(app).listen(http_port, function () {
+		debug("HTTP Server listening on port: %s, in %s mode", http_port, app.get('env'));
 	});
 
-	// error handlers
-
-	// development error handler
-	// will print stacktrace
-	if (app.get('env') === 'development') {
-		app.use(function(err, req, res, next) {
-			res.status(err.status || 500);
-			res.render('error', {
-				message: err.message,
-				error: err
-			});
-		});
-	}
-
-	// production error handler
-	// no stacktraces leaked to user
-	app.use(function(err, req, res, next) {
-		res.status(err.status || 500);
-		res.render('error', {
-			message: err.message,
-			error: {}
-		});
+	debug("Creating HTTPS server on port: %s", https_port);
+	require('https').createServer({
+		key: fs.readFileSync(path.join(__dirname, "keys", "fontDB.key")),
+		cert: fs.readFileSync(path.join(__dirname, "keys", "fontDB.crt")),
+		//ca: fs.readFileSync(path.join(__dirname, "keys", "ca.crt")),
+		requestCert: true,
+		rejectUnauthorized: false
+	}, app).listen(https_port, function () {
+		debug("HTTPS Server listening on port: %s, in %s mode", https_port, app.get('env'));
 	});
 	
 	return app;
 }
 
-connect();
-
-module.exports = setupExpress();
-
-console.log('Server ready.');
+init();
